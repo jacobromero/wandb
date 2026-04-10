@@ -65,7 +65,7 @@ func (r *fallbackCancelReader) Read(data []byte) (int, error) {
 
 func (r *fallbackCancelReader) Cancel() bool {
 	r.setCanceled()
-	return cancelFallbackRead(r.r)
+	return false
 }
 
 func (r *fallbackCancelReader) Close() error {

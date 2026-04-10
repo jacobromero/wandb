@@ -243,9 +243,3 @@ func flushConsoleInputBuffer(consoleInput windows.Handle) error {
 	return nil
 }
 
-func cancelFallbackRead(r io.Reader) bool {
-	if f, ok := r.(File); ok {
-		return windows.CancelIoEx(windows.Handle(f.Fd()), nil) == nil
-	}
-	return false
-}
