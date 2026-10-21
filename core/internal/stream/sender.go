@@ -1102,8 +1102,12 @@ func (s *Sender) sendConfig(_ *spb.Record, configRecord *spb.ConfigRecord) {
 
 // sendSystemMetrics sends a system metrics record via the file stream
 func (s *Sender) sendSystemMetrics(record *spb.StatsRecord) {
+	// System metrics are produced by the system monitor and arrive on a
+	// separate work stream from the Exit record, so a sample that was already
+	// in flight when the monitor was stopped may legitimately arrive after
+	// Exit. It is safe to drop.
 	if s.receivedExit() {
-		s.logCalledAfterExit("sendSystemMetrics")
+		s.logger.Debug("sender: sendSystemMetrics: dropping stats after exit")
 		return
 	}
 

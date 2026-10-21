@@ -163,6 +163,29 @@ func TestSendExitBeforeRunInitialization(t *testing.T) {
 	}
 }
 
+func TestSendSystemMetricsAfterExitIsNotAnError(t *testing.T) {
+	client := gqlmock.NewMockClient()
+	x := makeSender(t, client)
+	require.NoError(t, os.MkdirAll(x.Settings.GetFilesDir(), 0o700))
+	request, responses := runworktest.SimpleRequest(t, "exit")
+	x.Sender.SendRecord(&spb.Record{
+		RecordType: &spb.Record_Exit{Exit: &spb.RunExitRecord{}},
+	}, request)
+	select {
+	case <-responses:
+	case <-time.After(5 * time.Second):
+		t.Fatal("shutdown did not finish")
+	}
+
+	x.Sender.SendRecord(&spb.Record{
+		RecordType: &spb.Record_Stats{Stats: &spb.StatsRecord{}},
+	}, nil)
+
+	for _, entry := range observabilitytest.ExtractLogs(t, x.Logs) {
+		assert.NotEqual(t, "ERROR", entry["level"], entry["msg"])
+	}
+}
+
 func TestSendSummaryIgnoresInboundStep(t *testing.T) {
 	fileStream := filestreamtest.NewFakeFileStream()
 	x := makeSenderWithFileStream(t, gqlmock.NewMockClient(), fileStream)
